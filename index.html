@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeloVane — Sprint Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --vv-blue: #5BA4D4;
+    --vv-blue-light: #E8F2FA;
+    --vv-blue-dark: #3A7BAD;
+    --vv-blue-darker: #265A82;
+    --text-primary: #000000;
+    --text-secondary: #5C5F66;
+    --text-tertiary: #B2B2B2;
+    --text-wordmark: #4A4A4A;
+    --surface: #FFFFFF;
+    --surface-light: #F8F9FA;
+    --surface-dark: #111111;
+    --border: #E5E5E5;
+    --border-heavy: #D4D4D4;
+    --go: #2E7D32; --go-light: #E8F5E9;
+    --caution: #F57F17; --caution-light: #FFF8E1;
+    --skip: #C62828; --skip-light: #FFEBEE;
+    --p1: #5BA4D4; --p1-light: #E8F2FA;
+    --p2: #7B61FF; --p2-light: #EDE9FE;
+    --p3: #F59E0B; --p3-light: #FEF3C7;
+    --p4: #10B981; --p4-light: #D1FAE5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Geist Mono", "SF Mono", "Fira Code", monospace; background: var(--surface-light); color: var(--text-primary); line-height: 1.6; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+  .cover { background: var(--surface-dark); color: white; padding: 80px 60px 56px; position: relative; overflow: hidden; }
+  .cover::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 70%, rgba(91,164,212,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 30%, rgba(91,164,212,0.06) 0%, transparent 50%); }
+  .cover > * { position: relative; }
+  .cover-eyebrow { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.4; margin-bottom: 20px; font-weight: 300; }
+  .cover-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .cover-logo svg { width: 27px; height: 28px; }
+  .cover-logo span { font-size: 28px; font-weight: 400; }
+  .cover h1 { font-size: 36px; font-weight: 300; line-height: 1.2; max-width: 600px; margin-bottom: 12px; }
+  .cover-sub { font-size: 13px; font-weight: 300; opacity: 0.5; max-width: 500px; line-height: 1.6; margin-bottom: 36px; }
+  .cover-pills { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cover-pill { font-size: 10px; padding: 4px 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); font-weight: 300; }
+
+  .progress-banner { background: #1A1A1A; padding: 14px 60px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; z-index: 100; }
+  .progress-item { display: flex; align-items: center; gap: 10px; color: white; font-size: 11px; }
+  .progress-label { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.4; font-weight: 300; }
+  .progress-bar-outer { width: 120px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .progress-bar-inner { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .pb-p1 { background: var(--p1); } .pb-p2 { background: var(--p2); } .pb-p3 { background: var(--p3); } .pb-p4 { background: var(--p4); } .pb-overall { background: var(--vv-blue); }
+  .progress-count { font-size: 10px; opacity: 0.5; font-weight: 300; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+  .section { padding: 56px 0; border-bottom: 0.5px solid var(--border); }
+  .section:last-of-type { border-bottom: none; }
+  .section-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; font-weight: 300; }
+  h2 { font-size: 28px; font-weight: 300; margin-bottom: 8px; line-height: 1.2; }
+  .section-intro { font-size: 12px; color: var(--text-secondary); margin-bottom: 28px; max-width: 600px; line-height: 1.7; font-weight: 300; }
+
+  .sprint-block { margin: 20px 0; border: 0.5px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--surface); }
+  .sprint-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; transition: background 0.15s; }
+  .sprint-header:hover { background: var(--surface-light); }
+  .sprint-tag { font-size: 10px; padding: 2px 8px; border-radius: 3px; color: white; flex-shrink: 0; font-weight: 500; }
+  .st-p1 { background: var(--p1); } .st-p2 { background: var(--p2); } .st-p3 { background: var(--p3); } .st-p4 { background: var(--p4); }
+  .sprint-title { font-size: 14px; font-weight: 500; color: var(--text-primary); flex: 1; }
+  .sprint-meta { font-size: 11px; color: var(--text-tertiary); font-weight: 300; }
+  @media (max-width: 700px) { .sprint-meta { display: none; } }
+  .sprint-progress-pill { font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--surface-light); color: var(--text-tertiary); flex-shrink: 0; }
+  .sprint-chevron { font-size: 10px; color: var(--text-tertiary); transition: transform 0.2s; flex-shrink: 0; }
+  .sprint-block.collapsed .sprint-chevron { transform: rotate(-90deg); }
+  .sprint-body { border-top: 0.5px solid var(--border); }
+  .sprint-block.collapsed .sprint-body { display: none; }
+  .sprint-goal { padding: 14px 20px; background: var(--surface-light); font-size: 11px; color: var(--text-secondary); font-weight: 300; border-bottom: 0.5px solid var(--border); }
+  .sprint-goal strong { font-weight: 500; color: var(--text-primary); }
+  .sprint-done { padding: 14px 20px; background: var(--surface-light); font-size: 11px; color: var(--text-secondary); font-weight: 300; border-top: 0.5px solid var(--border); }
+  .sprint-done strong { font-weight: 500; color: var(--text-primary); }
+  .senior-flag { padding: 10px 20px; background: var(--caution-light); font-size: 11px; color: var(--caution); font-weight: 300; border-top: 0.5px solid var(--border); }
+  .senior-flag strong { font-weight: 500; }
+
+  .task-group { padding: 16px 20px; border-bottom: 0.5px solid var(--border); }
+  .task-group:last-child { border-bottom: none; }
+  .task-group-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-weight: 300; }
+  .task-group-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+
+  .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .task-item:last-child { border-bottom: none; }
+  .task-item.done .task-content { opacity: 0.35; }
+  .task-item.done .task-title { text-decoration: line-through; color: var(--text-tertiary); }
+  .task-check { width: 16px; height: 16px; border: 1.5px solid var(--border-heavy); border-radius: 3px; background: white; cursor: pointer; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-size: 10px; }
+  .task-check:hover { border-color: var(--vv-blue); }
+  .task-item.done .task-check { background: var(--go); border-color: var(--go); color: white; }
+  .task-check::after { content: ''; }
+  .task-item.done .task-check::after { content: '✓'; }
+  .task-content { flex: 1; }
+  .task-title { font-size: 12px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; line-height: 1.4; }
+  .task-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.6; font-weight: 300; margin-top: 4px; }
+  .task-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .task-chip { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 2px; font-weight: 500; white-space: nowrap; }
+  .tc-api { background: var(--p1-light); color: var(--vv-blue-dark); }
+  .tc-mobile { background: var(--p2-light); color: #7B61FF; }
+  .tc-new { background: var(--go-light); color: var(--go); }
+  .tc-critical { background: var(--skip-light); color: var(--skip); }
+  .tc-store { background: var(--p3-light); color: #B45309; }
+  .tc-infra { background: var(--surface-light); color: var(--text-secondary); }
+
+  .phase-success { background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px; padding: 20px; margin: 20px 0; }
+  .phase-success h4 { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .phase-success p { font-size: 11px; color: var(--text-secondary); line-height: 1.6; font-weight: 300; }
+
+  .footer { text-align: center; padding: 40px 20px 56px; font-size: 10px; color: var(--text-tertiary); font-weight: 300; }
+  .footer p + p { margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-eyebrow">Sprint Tracker</div>
+  <div class="cover-logo">
+    <svg width="27" height="28" viewBox="0 0 27 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 8.40756V0.784399C0 0.354434 0.348624 0 0.784399 0H7.01308C7.29197 0 7.55345 0.151068 7.6929 0.389291L18.5524 19.2032C18.6221 19.3194 18.657 19.4588 18.657 19.5925V27.2156C18.657 27.6456 18.3084 28 17.8726 28H11.6439C11.365 28 11.1035 27.8489 10.9641 27.6107L0.104599 8.79685C0.0348755 8.68064 0 8.54119 0 8.40756Z" fill="#5BA4D4"/><path d="M18.9185 2.00462L22.12 0.156941C22.2827 0.0639758 22.486 0.0639758 22.6487 0.156941L25.8502 2.00462C26.0129 2.09759 26.1175 2.2719 26.1175 2.46365V10.4703C26.1175 10.662 26.0187 10.8363 25.8502 10.9293L19.4472 14.6247C19.0928 14.828 18.6512 14.5724 18.6512 14.1657V2.46365C18.6512 2.2719 18.75 2.09759 18.9185 2.00462Z" fill="#5BA4D4"/></svg>
+    <span>velovane</span>
+  </div>
+  <h1>Sprint Plan v2</h1>
+  <div class="cover-sub">10 sprints · 4 phases · Risk-first methodology<br>Solo developer · 15–20 hrs/week · Quality-gated launch</div>
+  <div class="cover-pills">
+    <span class="cover-pill">Tomorrow.io</span>
+    <span class="cover-pill">FastAPI + Expo</span>
+    <span class="cover-pill">Claude AI Chat</span>
+    <span class="cover-pill">Freemium</span>
+    <span class="cover-pill">React Native</span>
+  </div>
+</div>
+
+<div class="progress-banner">
+  <div class="progress-item"><span class="progress-label">Overall</span><div class="progress-bar-outer"><div class="progress-bar-inner pb-overall" id="prog-overall" style="width:0%"></div></div><span class="progress-count" id="prog-overall-text">0/0</span></div>
+  <div class="progress-item"><span class="progress-label">P1</span><div class="progress-bar-outer"><div class="progress-bar-inner pb-p1" id="prog-phase1" style="width:0%"></div></div><span class="progress-count" id="prog-phase1-text">0/0</span></div>
+  <div class="progress-item"><span class="progress-label">P2</span><div class="progress-bar-outer"><div class="progress-bar-inner pb-p2" id="prog-phase2" style="width:0%"></div></div><span class="progress-count" id="prog-phase2-text">0/0</span></div>
+  <div class="progress-item"><span class="progress-label">P3</span><div class="progress-bar-outer"><div class="progress-bar-inner pb-p3" id="prog-phase3" style="width:0%"></div></div><span class="progress-count" id="prog-phase3-text">0/0</span></div>
+  <div class="progress-item"><span class="progress-label">P4</span><div class="progress-bar-outer"><div class="progress-bar-inner pb-p4" id="prog-phase4" style="width:0%"></div></div><span class="progress-count" id="prog-phase4-text">0/0</span></div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PHASE 1 — FOUNDATION -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <span class="section-label">Phase 1 — Sprints 1–3</span>
+  <h2>Foundation</h2>
+  <div class="section-intro">Core infrastructure running. Weather data flowing. App skeleton on device.</div>
+
+  <!-- SPRINT 1 -->
+  <div class="sprint-block" id="sprint-1">
+    <div class="sprint-header" onclick="toggleSprint('sprint-1')">
+      <span class="sprint-tag st-p1">Sprint 1</span>
+      <span class="sprint-title">Project Setup & Weather API</span>
+      <span class="sprint-meta">FastAPI · Tomorrow.io · Expo init</span>
+      <span class="sprint-progress-pill" id="pill-sprint-1">0/10</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Dev environment configured, Tomorrow.io returning real data through the Python API.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API (FastAPI)</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Initialize FastAPI project structure with environment config</div><div class="task-desc">Create the FastAPI project with a clean folder structure: /app, /app/routes, /app/models, /app/services, /app/config. Set up .env file management using python-dotenv or Pydantic Settings. Include separate configs for development, staging, and production environments. Tomorrow.io API key, database URL, and CORS origins should all be environment variables from day one.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-infra">Infra</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Set up repository, branching strategy, and CI basics</div><div class="task-desc">Initialize Git repo. Recommended branching: main (production), develop (integration), feature/* branches. Set up a basic CI pipeline (GitHub Actions recommended) that runs linting and tests on PR. Keep it simple — just pytest + flake8/ruff. No CD yet; deployment is manual this sprint.</div><div class="task-meta"><span class="task-chip tc-infra">Infra</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement /weather endpoint — hourly + daily from Tomorrow.io by lat/lng</div><div class="task-desc">Create GET /weather?lat={lat}&lng={lng} endpoint. Call Tomorrow.io's Timelines API to fetch hourly forecast (48 hours) and daily forecast (7 days). Use httpx or aiohttp for async HTTP calls. Return both hourly and daily arrays in the response. Handle Tomorrow.io rate limits gracefully. Log request/response metadata for debugging.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Map Tomorrow.io response to VeloVane weather model</div><div class="task-desc">Create Pydantic models for the VeloVane weather schema. Map Tomorrow.io fields to: temperature, feelsLike, humidity, heatIndex, dewPoint, precipProbability, windSpeed, windGust, windDirection. This abstraction layer means if you switch providers later (e.g., Open-Meteo fallback), only the mapping changes, not the entire app. Validate units — Tomorrow.io returns metric by default; handle imperial conversion at the API layer.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Basic error handling and logging on API layer</div><div class="task-desc">Implement structured error responses (consistent JSON error format with error code, message, and details). Add try/except around Tomorrow.io calls with specific handling for: 401 (bad API key), 429 (rate limit), 5xx (provider down), and network timeouts. Use Python logging with structured output (JSON logs recommended for production). Include request ID in all logs for tracing.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Deploy API to staging environment</div><div class="task-desc">Deploy to Railway, Render, or Fly.io — whichever you're most comfortable with. Railway is the fastest for Python; Fly.io gives more control. Confirm the /weather endpoint is accessible from the public internet. Set up environment variables in the hosting platform. Document the deploy process so it's repeatable. This is staging only — production deploy comes later.</div><div class="task-meta"><span class="task-chip tc-infra">Infra</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Initialize Expo project with TypeScript</div><div class="task-desc">Run npx create-expo-app with the TypeScript template. Set up the folder structure: /src/screens, /src/components, /src/services, /src/stores, /src/types. Configure path aliases for clean imports (@/components, @/services, etc.). Confirm the app builds and runs on both iOS simulator and Android emulator. Install core dependencies: react-navigation, axios/fetch wrapper, zustand.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Configure environment variables and API base URL</div><div class="task-desc">Set up expo-constants or react-native-config for environment variable management. Define API_BASE_URL that points to the staging FastAPI deployment. Ensure it's easy to switch between local development (localhost) and staging. Do not hardcode any URLs — everything through env vars.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Build API service layer (Axios or fetch wrapper)</div><div class="task-desc">Create a centralized API client with: base URL configuration, default headers, request/response interceptors for auth tokens (used in Sprint 2), error handling that surfaces user-friendly messages, and request timeout of 10 seconds. This service layer will be used by every screen in the app — invest in getting it right now.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-1"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Confirm weather data renders correctly in console/debug view</div><div class="task-desc">Call the staging /weather endpoint from the React Native app with a hardcoded Omaha lat/lng. Log the full response to the console. Verify all expected fields are present and correctly typed: temperature is a number, windDirection is a number (degrees), precipProbability is 0-100, etc. No UI needed — this is a data verification step. Take a screenshot of the console output as proof of completion.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> API call from React Native returns real Tomorrow.io forecast data for a hardcoded location. Data in console is enough.</div>
+      <div class="senior-flag"><strong>Senior Dev Flag:</strong> Deployment config is a common early stumbling block. Good touchpoint if setup stalls beyond 3 hours.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 2 -->
+  <div class="sprint-block collapsed" id="sprint-2">
+    <div class="sprint-header" onclick="toggleSprint('sprint-2')">
+      <span class="sprint-tag st-p1">Sprint 2</span>
+      <span class="sprint-title">Auth & User Foundation</span>
+      <span class="sprint-meta">Supabase · OAuth · Onboarding</span>
+      <span class="sprint-progress-pill" id="pill-sprint-2">0/13</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> User accounts working end to end. Preferences stored and retrievable.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Set up PostgreSQL database (Supabase)</div><div class="task-desc">Create a Supabase project and connect it to the FastAPI app. Set up SQLAlchemy or Tortoise ORM for database operations. Create the initial migration with a users table: id (UUID), email, password_hash, created_at, updated_at. Test the connection from the staging API deployment. Enable Row Level Security on the Supabase side as a defense-in-depth measure even though you're using your own auth.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-infra">Infra</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement /user endpoints: register, login, get profile, update preferences</div><div class="task-desc">POST /user/register — create account with email + hashed password (bcrypt). POST /user/login — return JWT access + refresh tokens. GET /user/profile — return user data + preferences (requires auth). PUT /user/preferences — update preference fields (requires auth). All endpoints should validate input with Pydantic models and return consistent error responses.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">JWT authentication with refresh token support</div><div class="task-desc">Implement JWT token generation with python-jose or PyJWT. Access token: 15-minute expiry. Refresh token: 7-day expiry, stored in the database (so it can be revoked). Create a dependency injection function for FastAPI that extracts and validates the JWT from the Authorization header. All authenticated endpoints use this dependency.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">User preference schema: duration, wind, temp, time, days, speed, direction</div><div class="task-desc">Create a preferences table or JSON column on the users table. Fields: ride_duration_min (int, minutes), ride_duration_max (int, minutes), wind_threshold (int, mph), temp_min (int, °F), temp_max (int, °F), preferred_times (array of strings: "early_morning", "morning", "midday", "afternoon", "evening"), riding_days (array of strings: "mon", "tue", etc.), preferred_speed (int, mph) — NEW for cycling feels-like, primary_direction (string: "NS", "EW", "NESW", "NWSE", "varies") — NEW for wind contextualization. Include sensible defaults for all fields.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Basic rate limiting on auth endpoints</div><div class="task-desc">Add rate limiting to /user/register and /user/login to prevent brute force attacks. Recommended: slowapi library for FastAPI. Limits: 5 registration attempts per IP per hour, 10 login attempts per IP per 15 minutes. Return 429 with a clear error message when limits are hit. Don't rate limit other endpoints yet — that comes later.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement auth flow screens (Figma onboarding designs)</div><div class="task-desc">Build the splash/load screen, login screen, and create account screen from the existing Figma designs. Match the VeloVane visual language: Geist Mono, white backgrounds, minimal borders, black buttons. Include form validation (email format, password minimum length) with inline error messaging. Navigation: splash → login/register → onboarding (new user) or dashboard (returning user).</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Sign in with Apple + Sign in with Google via Expo AuthSession</div><div class="task-desc">Integrate Apple Sign In and Google Sign In using Expo AuthSession. Apple Sign In is required for iOS App Store approval if you offer any social login. Configure the Apple Developer portal for Sign In with Apple. Configure Google Cloud Console for OAuth credentials. Handle the token exchange on the backend — receive the OAuth token, verify it with the provider, create or find the user, return your own JWT. Test on both platforms — Apple Sign In on Android has known quirks.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Email/password registration and login</div><div class="task-desc">Wire up the create account and login forms to the FastAPI endpoints. Handle success (store tokens, navigate forward) and error states (display API error messages inline). Include a "forgot password" link — it can be a placeholder screen for now, but the UI element should exist. Password fields should have a show/hide toggle.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Secure token storage (Expo SecureStore)</div><div class="task-desc">Store the JWT access token and refresh token in Expo SecureStore (encrypted, device-level storage). Never store tokens in AsyncStorage (unencrypted). Implement a token refresh flow: when an API call returns 401, automatically attempt to refresh using the refresh token. If refresh fails, redirect to login. This should be transparent to the rest of the app.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Onboarding preference capture — 7 questions, saves to API</div><div class="task-desc">Build a multi-step onboarding flow (card-style, one question per screen with progress indicator). Questions: (1) How long do you usually ride? (slider: 30-180 min), (2) What's your wind speed limit? (slider: 10-30 mph), (3) What temperature range are you comfortable in? (dual slider: 30-100°F), (4) When do you prefer to ride? (multi-select: morning/midday/afternoon/evening), (5) Which days do you ride? (multi-select: M-Su), (6) What's your average riding speed? (slider: 10-25 mph), (7) What direction do you usually ride? (selector). Save all preferences to the API on completion. Show a confirmation screen: "You're all set."</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Cardinal ride direction selector (N-S, E-W, NE-SW, NW-SE, Varies)</div><div class="task-desc">Build a visual selector for the onboarding flow — ideally a compass-style UI where the user taps their primary ride orientation. Options: North-South, East-West, Northeast-Southwest, Northwest-Southeast, or "Varies/no pattern." If "Varies" is selected, wind data throughout the app will show raw direction instead of headwind/tailwind/crosswind context. This single question transforms every wind recommendation in the app.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Preferred riding speed input (for cycling feels-like)</div><div class="task-desc">Add a speed preference question to the onboarding flow. Slider from 10-25 mph with 1 mph increments. Include helper text: "This is used to calculate how the temperature actually feels on the bike at your speed." The average recreational rider is 12-14 mph; serious amateurs are 15-18+. Default to 15 mph. This value is used server-side for the cycling-specific "feels like" temperature calculation.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-2"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Auth state management (Zustand store)</div><div class="task-desc">Create a Zustand store for auth state: isAuthenticated, user object, preferences, tokens. Hydrate from SecureStore on app launch. Expose actions: login, logout, updatePreferences, refreshToken. The store should be the single source of truth for auth state across the app — no prop drilling. When the user logs out, clear SecureStore and reset the store.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> New user registers, completes 7-question onboarding (incl. speed + direction), preferences persist. Returning user logs in and retrieves profile.</div>
+      <div class="senior-flag"><strong>Senior Dev Flag:</strong> OAuth (Apple/Google) has platform-specific gotchas — especially Apple Sign In on Android.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 3 -->
+  <div class="sprint-block collapsed" id="sprint-3">
+    <div class="sprint-header" onclick="toggleSprint('sprint-3')">
+      <span class="sprint-tag st-p1">Sprint 3</span>
+      <span class="sprint-title">Dashboard UI (Weather Data)</span>
+      <span class="sprint-meta">Figma → code · Feels-like · Dawn/dusk</span>
+      <span class="sprint-progress-pill" id="pill-sprint-3">0/15</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Core dashboard screen built and displaying real weather data. The app looks and feels like VeloVane for the first time.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement dashboard screen using Figma designs as production reference</div><div class="task-desc">Build the main dashboard screen matching the Figma designs pixel-for-pixel. This is the LocationCard → ForecastCard → TemperatureCard → WindCard vertical layout. Use the Figma component measurements: 24px page padding, 0.5px border-bottom separators between cards, Geist Mono font weights matching the design tokens (Light for labels, Regular for data, Medium for section headers). This is the screen users will see 90% of the time — invest in getting it right.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Hourly forecast horizontal scroll: temp, feels-like, precip %, wind</div><div class="task-desc">Build a horizontal FlatList showing the next 48 hours. Each hour cell shows: time label (10px Light), wind direction arrow (16px rotated SVG), and wind speed (14px Medium). Match the Figma WindCard hourly row layout. Current hour should be highlighted or labeled "NOW". Scroll should be smooth with snap-to-item behavior. Pre-load enough cells to avoid visible loading during scroll.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Wind direction visual indicator (animated compass arrow per hour)</div><div class="task-desc">Create a reusable WindArrow component that renders an SVG arrow rotated to the correct wind direction (0-360 degrees). The arrow should point in the direction the wind is coming FROM (meteorological convention). Use CSS transform: rotate() with a 300ms transition for smooth updates. Two sizes needed: 16px for hourly cells, 20px for the main wind display. Color follows the text hierarchy — Secondary for default.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Wind contextualization — headwind/tailwind/crosswind relative to ride direction</div><div class="task-desc">If the user has a ride direction set (not "Varies"), calculate the relationship between wind direction and ride direction using simple trigonometry. Wind within ±30° of opposing ride direction = headwind. Within ±30° of same direction = tailwind. Everything else = crosswind. Display as text: "12mph headwind for your N-S route" instead of just "12mph NNW". This is the single biggest usability improvement over a generic weather app — make it prominent.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Daily summary view (7-day)</div><div class="task-desc">Build a 7-day summary view below the hourly forecast. Each day shows: day name, high/low temp, wind range (min-max speed), precip probability, and a simple condition icon. Keep it compact — this is a glanceable overview, not a detailed view. Data beyond 48 hours should have a visual confidence indicator (subtle opacity reduction or a "lower confidence" label).</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Forecast confidence indicator for data beyond 48 hours</div><div class="task-desc">Weather forecasts degrade in accuracy beyond 48 hours. Visually indicate this on the 7-day view — recommended approach is a subtle opacity fade on days 3-7 with a small label: "Less reliable beyond 48hrs." This builds trust with cyclists who know that Thursday's forecast is much less reliable than tomorrow's. Don't hide the data — just be honest about its confidence level.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Cycling-specific "feels like" temperature display</div><div class="task-desc">Display the cycling feels-like temperature alongside the standard temperature everywhere temp appears: dashboard card, hourly cells, and 7-day view. Format: "75° (feels 68° on bike)" — use the "on bike" or "on the bike" phrasing, not "cycling feels-like." Only show the cycling feels-like when the delta from standard exceeds 5°F — otherwise it's noise. The calculation comes from the API; the mobile app just displays it.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Dawn/dusk safety window overlay on hourly timeline</div><div class="task-desc">Overlay civil twilight times on the hourly scroll view. Pre-dawn and post-dusk hours should have a subtle background tint (use a very light gray or a slight darkening). Add small sunrise/sunset icons at the appropriate hours. When dawn/dusk falls mid-hour, the marker should indicate the approximate time within the hour. This helps cyclists immediately see light conditions alongside weather data. Dashboard card should note when a recommended window overlaps darkness: "This window starts 25 min before sunrise."</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Location detection using Expo Location</div><div class="task-desc">Request location permissions using Expo Location. Use "While Using" as the default permission level. Get the user's current coordinates and pass them to the /weather endpoint. Handle the permission denied case gracefully — show a manual location search instead. Cache the last known location so the app isn't blank on launch while waiting for a GPS fix. Update location when the app returns to foreground if it's been more than 30 minutes.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Saved favorite locations (up to 3 on free tier)</div><div class="task-desc">Allow users to save up to 3 locations on the free tier (5 on premium, enforced in Sprint 9). Build a simple location search using a geocoding API — user types a city name, gets autocomplete results, selects one. Saved locations appear as a swipeable selector at the top of the dashboard. Current GPS location is always available as "Current Location" regardless of the saved location count.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Imperial/metric toggle — persisted to user preferences</div><div class="task-desc">Add a toggle in settings (and optionally on the dashboard) to switch between imperial (°F, mph) and metric (°C, km/h). Persist the choice to the user's preferences via the API. All temperature and wind speed displays throughout the app should respect this setting. Default to imperial for US users, metric for everyone else (detect from device locale).</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Pull-to-refresh + loading and error states</div><div class="task-desc">Implement pull-to-refresh on the dashboard that triggers a fresh /weather API call. Show a loading skeleton while data loads (not a spinner — skeletons feel faster). Build an error state screen for when the API is unreachable: "Couldn't update forecast. Showing cached data from [timestamp]." If there's no cached data at all, show a clear retry button. All three states (loading, loaded, error) should feel intentional and on-brand.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Location-based caching on /weather (lat/lng ~1km, 3hr TTL)</div><div class="task-desc">Implement a cache layer (Redis recommended, or in-memory for MVP) that caches Tomorrow.io responses by lat/lng rounded to 2 decimal places (~1km precision). TTL of 3 hours. This dramatically reduces API calls and cost — 100 users in the same city hit Tomorrow.io once, not 100 times. Cache key format: "weather:{lat_rounded}:{lng_rounded}". Log cache hits vs misses for monitoring. Invalidation is by TTL only — no manual invalidation needed.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Dawn/dusk calculation utility (civil twilight from lat/lng + date)</div><div class="task-desc">Implement civil twilight calculation. Options: (1) Use the astral Python library — it calculates sunrise, sunset, and civil twilight from lat/lng + date with no API call needed. (2) Use a free sunrise/sunset API. Recommend option 1 — it's faster, free, and works offline. Return: dawn_start, sunrise, sunset, dusk_end for the requested date. Include this data in the /weather response so the mobile app doesn't need to calculate it.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase1" data-sprint="sprint-3"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Cycling "feels like" calculation (wind chill formula + riding speed)</div><div class="task-desc">Implement the cycling-specific wind chill formula. The key insight: a cyclist at 15mph creates their own 15mph "wind" even on a calm day. Effective wind speed = actual wind speed + riding speed (simplified; a more accurate model accounts for wind direction relative to riding direction). Use the NWS wind chill formula with the effective wind speed. Also factor in humidity for heat index at higher temps. Input: air temp, wind speed, humidity, riding speed. Output: adjusted feels-like temp. This is pure math — no API cost, runs in microseconds.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> Real cyclist sees local hourly forecast with wind direction contextualized to their ride direction, cycling feels-like temp, and dawn/dusk markers. Immediately more useful than a generic weather app.</div>
+    </div>
+  </div>
+
+  <div class="phase-success"><h4>Phase 1 Gate</h4><p>The app fetches real weather data, displays it with cyclist-specific intelligence (feels-like, wind context, dawn/dusk), and a real user can register and see their personalized dashboard. No AI yet — just data done right.</p></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PHASE 2 — AI RECOMMENDATION ENGINE -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <span class="section-label">Phase 2 — Sprints 4–6</span>
+  <h2>AI Recommendation Engine</h2>
+  <div class="section-intro">The AI layer is built, tested, and surfaced on the dashboard. This is the product's core differentiator.</div>
+
+  <!-- SPRINT 4 -->
+  <div class="sprint-block collapsed" id="sprint-4">
+    <div class="sprint-header" onclick="toggleSprint('sprint-4')">
+      <span class="sprint-tag st-p2">Sprint 4</span>
+      <span class="sprint-title">Rules Engine & Recommendation Logic</span>
+      <span class="sprint-meta">Scoring · Wind direction · Unit tests</span>
+      <span class="sprint-progress-pill" id="pill-sprint-4">0/8</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Ride window recommendation engine running server-side for any user profile + forecast combination.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Build /recommendations endpoint</div><div class="task-desc">Create GET /recommendations?lat={lat}&lng={lng} (authenticated). This endpoint fetches the weather forecast, loads the user's preference profile, and runs the rules engine to identify optimal ride windows. Response includes: an array of ranked windows (top 1-3), each with start_time, end_time, score, conditions summary, and plain-language reason. If no windows meet preferences, return the next-best window with the primary blocker reason.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Rules engine: evaluate 48hr forecast against user thresholds, score + rank windows</div><div class="task-desc">For each hour in the 48hr forecast, calculate a composite score based on: (1) wind speed vs user threshold (0 if exceeded, scaled 0-1 below), (2) temperature vs comfort range (1 if within, scaled penalty outside), (3) precip probability (1 if <10%, linear penalty to 0 at 80%+), (4) time of day match (bonus for preferred times, penalty for non-preferred). Group consecutive hours with scores above a threshold into "ride windows." Rank windows by average score × duration. Return the top 3.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Wind direction scoring — headwind/tailwind/crosswind per hour</div><div class="task-desc">If the user has a ride direction preference, calculate the wind-to-ride angle for each hour. Scoring: tailwind = small bonus (riding with the wind), crosswind = neutral, headwind = penalty (scaled by speed — a 5mph headwind is fine, a 20mph headwind is awful). Use the same trigonometry as the dashboard display. For users with "Varies" direction, skip this scoring component and weight wind speed more heavily instead.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Dawn/dusk constraint — penalize or flag windows overlapping darkness</div><div class="task-desc">Windows that start or end in darkness (before civil dawn or after civil dusk) should receive a scoring penalty — not an automatic disqualification, since some cyclists ride with lights. If a top-ranked window overlaps darkness, include a safety note in the reasoning: "This window starts 20 min before sunrise — bring lights for the first portion." If the entire window is in darkness, penalize heavily but still show it if no daylight alternatives exist.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Plain-language reason generator (template-based, not LLM)</div><div class="task-desc">Build a template system that generates human-readable explanations for each recommended window. Format: "7–9am: 64°F (feels like 58° on the bike), 9mph tailwind, less than 5% rain — well within your preferences." When cycling feels-like delta exceeds 5°F, call it out: "It's 72° but will feel like 64° on the bike at your speed." Include the wind direction context if the user has a ride direction set. Use plain, direct language — no marketing speak. This is NOT an LLM call — it's string templates with variable insertion.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">No-good-window handler: next available + primary blocker reason</div><div class="task-desc">When no hours in the 48hr forecast meet the user's preferences, the endpoint should: (1) identify the primary blocker (e.g., "Wind exceeds your 20mph threshold all day"), (2) find the next-best window even though it doesn't fully qualify, (3) identify when conditions are expected to improve ("Tomorrow morning looks better — wind drops to 12mph"). Never return an empty recommendation — always give the cyclist something actionable, even if it's "today isn't your day."</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Unit tests: all-day rain, headwind all day, dawn/dusk edge cases</div><div class="task-desc">Write pytest tests covering: (1) all-day rain at 80%+ probability → no window, blocker = "rain", (2) wind above threshold all 48 hours → no window, shows when wind drops, (3) headwind all day but tailwind tomorrow → recommends tomorrow, (4) perfect conditions but entirely before dawn → flags darkness, (5) overnight-only favorable window → penalized but shown, (6) user with no ride direction → wind scoring uses speed only, (7) edge case where temp range is inverted (user error). Minimum 15 test cases. These tests are your safety net before Sprint 5 builds UI on top.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-4"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Wire up recommendation API call + temporary debug view</div><div class="task-desc">Add a call to /recommendations on dashboard load (after weather data loads). Display the raw JSON response in a temporary debug view — this lets you verify the engine is working correctly before investing in the polished UI next sprint. Confirm the recommendation data includes all expected fields: windows array, reasons, blocker info. This is a throwaway screen that gets replaced in Sprint 5.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> Rules engine returns accurate, preference-aware ride windows incorporating wind direction and dawn/dusk. Covered by 15+ unit tests.</div>
+      <div class="senior-flag"><strong>Senior Dev Flag:</strong> Recommendation scoring logic can get complex fast. Sanity-check algorithm design before building UI on top.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 5 -->
+  <div class="sprint-block collapsed" id="sprint-5">
+    <div class="sprint-header" onclick="toggleSprint('sprint-5')">
+      <span class="sprint-tag st-p2">Sprint 5</span>
+      <span class="sprint-title">Recommendation Card & Push Notifications</span>
+      <span class="sprint-meta">AI card · Expo Notifications · Scheduling</span>
+      <span class="sprint-progress-pill" id="pill-sprint-5">0/15</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> AI recommendation card live on dashboard. Morning push notifications sending.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Design + implement AI recommendation card (new Figma screen)</div><div class="task-desc">This card sits at the top of the dashboard, above the weather cards. It's the first thing the user sees. Design in Figma first, then implement. The card should feel distinct from the weather data below — it's the "intelligence" layer. Include a go/caution/skip visual indicator (use the brand semantic colors), the recommended window time range, and the plain-language reason. Tap to expand for more detail.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Card: window, temp + cycling feels-like + wind + precip, reason, go/caution/skip</div><div class="task-desc">The expanded card shows: recommended time window (e.g., "7:00 – 9:00 AM"), temperature with cycling feels-like when delta > 5°F, wind speed + direction context (headwind/tailwind/crosswind), precipitation probability, and the template-generated plain-language reason. The go/caution/skip indicator should use the semantic colors from the brand guide: green (#2E7D32) for go, amber (#F57F17) for caution, red (#C62828) for skip.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Wind direction context on card — "12mph tailwind"</div><div class="task-desc">The recommendation card should display wind using the same directional context as the dashboard: "12mph tailwind for your N-S route" instead of "12mph from the south." This is the same logic from Sprint 3 but applied specifically to the recommended window's conditions. If the user has "Varies" as their direction, just show raw wind: "12mph S."</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Dawn/dusk note on card when relevant</div><div class="task-desc">When the recommended window overlaps with pre-dawn or post-dusk, add a note to the card: "Window starts 20 min before sunrise — bring lights" or "Sunset at 7:45 PM — last 30 min will be in twilight." Only show this when relevant — don't clutter the card with light information when the window is entirely in daylight. Use the info semantic color for the note.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">No-window state: blocker + next best option</div><div class="task-desc">When no windows meet preferences, the card should clearly communicate why and what's next. Display: "Tough day" header with skip-red indicator, primary blocker reason ("Wind exceeds your 20mph threshold all day, gusting to 30"), and the next-best option ("Tomorrow morning looks much better — 12mph from the south"). The tone should be honest but not defeatist — coach energy, not bad news delivery.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Card refresh on forecast update</div><div class="task-desc">The recommendation card should re-fetch when: (1) the user pulls to refresh, (2) the app returns to foreground after 30+ minutes, (3) the weather data is updated. Wire the recommendation API call to the same refresh lifecycle as the weather data. Show a subtle loading indicator on the card during refresh — don't blank the card while loading new data.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Expo Notifications setup + cyclist-specific permissions request</div><div class="task-desc">Set up Expo Notifications for push notification support. The notification permission request should use a custom pre-prompt (not the system dialog alone) that explains the value in cyclist-specific terms: "Get your best ride window delivered every morning before you check the weather." Show this pre-prompt before the system permission dialog. If the user declines, don't nag — let them enable it later in settings.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Push scheduling: user-configured time (default 6am) on riding days</div><div class="task-desc">Notifications fire at the user's configured time (default 6:00 AM local) only on their configured riding days. Build this as a server-side scheduled job — the device registers a push token with the API, and the server sends at the right time. This approach is more reliable than client-side scheduling and works even if the app isn't running. The user should never get a notification on a rest day unless they change their settings.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Notification content: best window, conditions, go/caution/skip + cycling feels-like</div><div class="task-desc">Notification format: "[Go/Caution/Skip] Best window 7–9am. 64°F (58° on bike), light tailwind, no rain." Keep it under 2 lines — notification real estate is limited. Include cycling feels-like when delta exceeds 5°F. The go/caution/skip is communicated via the first word. Rich notifications (iOS) can include a small color indicator but don't rely on it for the core message.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Deep-link from notification to dashboard with card expanded</div><div class="task-desc">When the user taps the notification, the app should open directly to the dashboard with the recommendation card expanded (showing full details). Use Expo's notification response handling to detect a tap and navigate to the correct screen state. If the app was killed, it should launch → authenticate (from stored tokens) → navigate to dashboard with card expanded. Test this flow on both iOS and Android.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Notification settings screen: on/off, time picker, riding days</div><div class="task-desc">Build a notification settings screen accessible from the profile/settings area. Include: master on/off toggle, time picker (scrollable hours, 15-min increments), riding days selector (tap to toggle each day). Changes should save to the API immediately and update the server-side scheduling. Include a "Send test notification" button for debugging — invaluable during development.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Push token registration endpoint</div><div class="task-desc">Create POST /notifications/register that accepts the Expo push token from the device and stores it on the user record. Tokens can change (e.g., after app reinstall), so always update the stored token on registration. Also store the user's timezone (from the device) so notifications fire at the correct local time. Handle the case where a user has multiple devices — store an array of tokens.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Scheduled notification job (APScheduler or Celery)</div><div class="task-desc">Set up a background job scheduler. APScheduler is simpler for a solo dev; Celery is more robust at scale. The job runs every 15 minutes, queries for users whose notification time falls within the current 15-min window AND whose riding days include today, generates a recommendation for each, and sends via the Expo Push API. Batch send notifications — Expo's API supports batches of up to 100. Log all sends for debugging.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-5"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Notification generation uses same rules engine as dashboard</div><div class="task-desc">The notification content should be generated by the same rules engine that powers the dashboard recommendation card. Do NOT build a separate notification-specific engine — reuse the /recommendations logic. Format the recommendation into notification-friendly text (short, 2 lines max). This ensures the notification and the dashboard always show the same recommendation for the same conditions. If the rules engine changes, notifications update automatically.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> User receives morning push with accurate, preference-aware ride window. Tapping opens dashboard card.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 6 -->
+  <div class="sprint-block collapsed" id="sprint-6">
+    <div class="sprint-header" onclick="toggleSprint('sprint-6')">
+      <span class="sprint-tag st-p2">Sprint 6</span>
+      <span class="sprint-title">Claude AI Chat Interface</span>
+      <span class="sprint-meta">Claude API · Prompt engineering · Streaming</span>
+      <span class="sprint-progress-pill" id="pill-sprint-6">0/12</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> On-demand AI chat live. Natural language → forecast-grounded, cyclist-specific answers.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement /chat endpoint as Claude API proxy</div><div class="task-desc">Create POST /chat that accepts the user's message, constructs a Claude API request with the system prompt + injected data + conversation history, and returns Claude's response. Use the Anthropic Python SDK. Stream the response (see streaming task below). Include a conversation_id so the client can maintain session context. Set max_tokens to a reasonable limit (500-800 for weather responses). Use claude-sonnet-4-20250514 for cost efficiency.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">System prompt: cyclist context, forecast data, preferences, feels-like, dawn/dusk</div><div class="task-desc">This is the most critical engineering task in Sprint 6. The system prompt must: (1) establish VeloVane's voice (direct, data-first, cyclist vocabulary), (2) inject the current 48hr forecast as structured data (JSON), (3) inject the user's full preference profile, (4) inject cycling feels-like values alongside standard temps, (5) inject dawn/dusk times, (6) constrain Claude to only discuss weather/cycling — no off-topic responses, (7) instruct Claude to ALWAYS cite specific numbers from the injected data. Test extensively — a single hallucinated wind speed destroys trust.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Instruct Claude to use headwind/tailwind/crosswind language</div><div class="task-desc">Add to the system prompt: when the user has a ride direction set, Claude should reference wind in directional context. "The wind shifts to a headwind for your north-south route by 2pm" instead of "The wind shifts to blow from the north at 2pm." Include the ride direction in the injected user profile. If direction is "Varies," Claude should describe wind in standard cardinal terms. Test with multiple direction preferences to confirm correct behavior.</div><div class="task-meta"><span class="task-chip tc-api">API</span><span class="task-chip tc-new">New v2</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Conversation history handling within session</div><div class="task-desc">Maintain conversation history for the duration of a chat session. Store messages in the API (keyed by conversation_id) with a TTL of 1 hour. Pass the full history to Claude on each request so it has context from earlier in the conversation. Limit history to the last 10 messages to control token usage and cost. When the session expires, start fresh — no persistent chat history across sessions.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Streaming response support</div><div class="task-desc">Use Claude's streaming API to send response tokens as they're generated. This dramatically improves perceived latency — the user sees text appearing within 500ms instead of waiting 3-5 seconds for the full response. Implement as Server-Sent Events (SSE) from the FastAPI endpoint. The mobile app receives the stream and renders text progressively. Test that partial responses render correctly mid-stream.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Rate limiting per user + error handling with fallback</div><div class="task-desc">Rate limit chat requests to 20 per user per hour on free tier (unlimited on premium, enforced in Sprint 9). When a user hits the limit, return a friendly message: "You've hit the chat limit for this hour. The dashboard recommendation card is always available." Handle Claude API failures gracefully: 529 (overloaded) → "The AI is busy — try again in a moment." 500 → "Something went wrong. Check the dashboard for your latest recommendation." Never show raw error messages to the user.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Design + implement chat interface (new Figma screen)</div><div class="task-desc">Design a clean chat UI in Figma, then implement. Match VeloVane's monospace aesthetic — this should look like a terminal/instrument chat, not a generic messaging app. User messages right-aligned, AI responses left-aligned. Use subtle background tint to distinguish message types. No avatars or chat bubbles — keep it flat and data-forward. Include a persistent text input at the bottom with a send button.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Persistent chat icon/button on dashboard</div><div class="task-desc">Add a floating action button or persistent icon on the dashboard that opens the chat interface. Position it in the bottom-right corner. Use a minimal icon (speech bubble or similar). The button should be visible but not obtrusive — it's secondary to the dashboard data. On tap, navigate to the chat screen. Badge the icon when there's a new insight (future feature, but build the badge infrastructure now).</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Message input, send button, conversation thread UI</div><div class="task-desc">Build the message composition area: text input with placeholder "Ask about riding conditions...", a send button that disables while a response is loading, and auto-scroll to the latest message. The conversation thread should be a FlatList that inverts (newest at bottom). Handle keyboard avoidance on both platforms. Include suggested starter questions on the empty state: "Should I ride this afternoon?", "What's the best window tomorrow?", "Is it going to be windy later?"</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Streaming response rendering (progressive text)</div><div class="task-desc">Render Claude's response progressively as tokens arrive via SSE. The text should appear word-by-word (or chunk-by-chunk) with a subtle typing indicator. Use a state variable that appends each chunk to the current response message. Auto-scroll as text appears. When the stream completes, finalize the message. If the stream is interrupted, show what was received with an "interrupted" indicator.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Loading indicator while awaiting response</div><div class="task-desc">Show a typing/thinking indicator in the AI message area while waiting for the first token to arrive. Use a pulsing dot animation or a simple "thinking..." text in the AI's message color. The indicator should appear immediately when the user sends a message and disappear once streaming begins. This bridges the gap between "message sent" and "first token received" which is typically 500-1500ms.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase2" data-sprint="sprint-6"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Session-scoped conversation history (clears on background)</div><div class="task-desc">Chat history is session-scoped: it persists while the user is actively in the chat, but clears when they leave the chat screen or the app goes to background for more than 5 minutes. This is intentional — weather-based conversations are ephemeral. Show a subtle "New session" indicator when history has been cleared. Don't persist chat to disk or the database — it's in-memory on the client, server-side with TTL.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> "Should I ride this afternoon?" → response citing local forecast, preferences, cycling feels-like, wind direction, and light conditions. Under 5 seconds.</div>
+    </div>
+  </div>
+
+  <div class="phase-success"><h4>Phase 2 Gate</h4><p>The AI layer is live. Rules engine, push notifications, and chat interface all working. A cyclist gets actionable ride recommendations without thinking about weather data.</p></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PHASE 3 — BEHAVIORAL INFERENCE -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <span class="section-label">Phase 3 — Sprints 7–8</span>
+  <h2>Behavioral Inference & Personalization</h2>
+  <div class="section-intro">The app starts learning. GPS inference running. Post-ride nudge delivered.</div>
+
+  <!-- SPRINT 7 -->
+  <div class="sprint-block collapsed" id="sprint-7">
+    <div class="sprint-header" onclick="toggleSprint('sprint-7')">
+      <span class="sprint-tag st-p3">Sprint 7</span>
+      <span class="sprint-title">GPS Inference Engine</span>
+      <span class="sprint-meta">Background location · Ride detection</span>
+      <span class="sprint-progress-pill" id="pill-sprint-7">0/8</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Passive ride detection running on-device. Inferred rides updating preference profile.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement background location tracking (Expo Location)</div><div class="task-desc">Set up Expo's background location task using TaskManager. This runs even when the app is in the background. Configure for "significant changes" mode on iOS (less battery drain than continuous tracking) and equivalent on Android. Request "Always" location permission with a clear explanation of why it's needed: "VeloVane uses background location to detect when you ride, so it can learn your preferences over time." If the user only grants "While Using," the app still works — inference just requires the app to be open.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">On-device inference: detect 10–25mph sustained for 30+ min → cycling</div><div class="task-desc">Build the ride detection algorithm entirely on-device (no API calls during detection). Logic: if location updates show sustained movement at 10–25 mph for 30+ consecutive minutes, classify as a likely cycling session. Filter out: driving (>30mph sustained), walking (<8mph), and stationary periods with GPS drift. Use conservative thresholds — false negatives (missing a ride) are better than false positives (detecting a car trip as cycling). The algorithm should run in the background task with minimal battery impact.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Record inferred ride: datetime, duration, weather conditions at time</div><div class="task-desc">When a likely ride is detected, record: start_time, end_time, duration_minutes, and the weather conditions at the ride's location during the ride (fetch from cached weather data or make a lightweight API call). Store as a local event object. This gives the AI engine a record of what conditions the user actually rode in — which is the signal for learning their true preferences (vs. what they said in onboarding).</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Location permission request with cyclist-specific explanation</div><div class="task-desc">Build a custom permission pre-prompt screen (shown before the system dialog) that explains background location in cyclist terms: "VeloVane can detect when you ride to learn your preferences — like which wind speeds you're actually comfortable in, even if you didn't set them in onboarding." Include a "Learn more" link to your privacy policy. Offer an explicit "Skip for now" option — never pressure the user. If they skip, the app works fine without inference — onboarding preferences are the baseline forever.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Inferred rides queued locally, synced to API when online</div><div class="task-desc">Store inferred ride events in a local queue (AsyncStorage is fine for this). When the device has connectivity, batch-sync the queue to the /inference API endpoint. Handle the case where sync fails (network issue) — keep the events in the queue and retry on next connectivity event. Clear synced events from the local queue after successful API confirmation. This offline-first approach means ride detection works even without internet.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">/inference endpoint: receives inferred ride events</div><div class="task-desc">Create POST /inference that accepts a batch of inferred ride events from the device. Validate each event: reasonable timestamps, plausible duration (30 min - 8 hours), and non-duplicate (check against existing events). Store in an inferred_rides table: user_id, start_time, end_time, duration, weather_conditions (JSON), confidence (initially "inferred" — upgraded to "confirmed" if user taps Yes on the nudge). Index by user_id and start_time for efficient querying.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Preference update logic (additive model, min 10 rides before adjustment)</div><div class="task-desc">Build the behavioral learning algorithm. Approach: after a user has 10+ inferred/confirmed rides, calculate the actual range of conditions they've ridden in. If they consistently ride in 18-20mph wind despite setting a 15mph threshold, gradually adjust the inferred threshold upward. Key rules: (1) never lower a threshold below what the user set in onboarding (that's their stated floor), (2) only raise thresholds based on actual behavior, (3) require 10 rides minimum for any adjustment, (4) weight confirmed rides (nudge = Yes) 3x higher than inferred-only rides.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-7"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Onboarding preferences remain baseline until sufficient data</div><div class="task-desc">Critical safeguard: onboarding preferences are the baseline and should never be overwritten by behavioral inference. Instead, maintain two layers: "stated" (from onboarding) and "learned" (from behavior). The rules engine uses the learned values when available, but the user can always revert to stated values. The My Profile screen (Sprint 8) will show both layers clearly. This protects against inference errors degrading the experience.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> App identifies a 45-min cycling session via GPS and records it with weather conditions. Profile update logic processes server-side.</div>
+      <div class="senior-flag"><strong>Senior Dev Flag:</strong> iOS background location is heavily restricted. Highest platform complexity in the project. Strongly recommend senior dev consultation.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 8 -->
+  <div class="sprint-block collapsed" id="sprint-8">
+    <div class="sprint-header" onclick="toggleSprint('sprint-8')">
+      <span class="sprint-tag st-p3">Sprint 8</span>
+      <span class="sprint-title">Post-Ride Nudge & Profile Transparency</span>
+      <span class="sprint-meta">Nudge · My Profile · Account deletion</span>
+      <span class="sprint-progress-pill" id="pill-sprint-8">0/9</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Post-ride nudge delivered. User can view and edit their inferred preference profile.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Post-ride nudge notification (30 min after likely ride ends)</div><div class="task-desc">After the GPS inference engine detects a likely ride has ended, schedule a local notification for 30 minutes later. This delay avoids interrupting the immediate post-ride routine (stretching, showering, etc.). The notification should be a local push (not server-sent) since the device already knows the ride ended. Use Expo's notification scheduling API with a 30-minute trigger.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Nudge content: "Did you ride?" — Yes / No / Dismiss</div><div class="task-desc">Notification text: "Looks like you may have gotten out this morning — did you ride?" Include action buttons: Yes and No. Tapping Yes confirms the ride (high-confidence signal sent to the inference engine). Tapping No marks the event as a false positive (helps train better detection). Dismissing without tapping either button leaves the event as "inferred" (medium confidence). All three outcomes are valid data points.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Yes/No feeds back to inference engine (high confidence signal)</div><div class="task-desc">When the user taps Yes: update the ride record's confidence from "inferred" to "confirmed" and immediately sync to the API. This triggers the preference update logic (if the user has 10+ rides). When the user taps No: mark the ride as "false_positive" and sync. This data helps improve the detection algorithm over time — if a user consistently gets false positives during car commutes, that's a signal to tighten the speed threshold.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">"My Profile" screen: current thresholds, manual vs learned, override capability</div><div class="task-desc">Build a profile screen that shows the user's current preference profile with full transparency. For each preference (wind threshold, temp range, etc.), show: the current active value, whether it came from onboarding ("you set this") or behavioral learning ("learned from your rides"), and an edit button to manually override. If a preference has been adjusted by learning, show both the original onboarding value and the learned value. Use the brand's data-forward style — numbers prominent, labels small.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">"Reset to onboarding preferences" option</div><div class="task-desc">Add a "Reset to original preferences" button at the bottom of the My Profile screen. This reverts all learned adjustments back to the onboarding values. Show a confirmation dialog: "This will reset all learned preferences to your original onboarding values. Ride history will be preserved." This is the user's escape valve if the learning goes wrong — it should feel safe and easy to use.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Account deletion flow: purge inference data within 30 days</div><div class="task-desc">Add an "Delete Account" option in settings. Confirmation flow: "This will permanently delete your account and all associated data, including ride history and learned preferences. This cannot be undone." On confirmation: mark the account for deletion (soft delete), schedule full data purge within 30 days (GDPR/privacy requirement). During the 30-day window, the user can contact support to cancel. After 30 days, all user data is permanently removed from the database.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Nudge scheduling triggered by inferred ride detection</div><div class="task-desc">When the /inference endpoint receives a new ride event, check if the user has nudge notifications enabled. If so, schedule a push notification for 30 minutes after the ride's end_time. Use the Expo Push API to send. Don't send a nudge if the ride ended more than 2 hours ago (stale data from delayed sync). Maximum one nudge per day per user to avoid notification fatigue.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">High-confidence ride confirmation triggers immediate profile update</div><div class="task-desc">When a ride is confirmed (nudge → Yes), immediately run the preference update logic for that user — don't wait for a batch job. This makes the learning feel responsive. After the update, the next recommendation the user sees will already reflect the confirmed ride. Return the updated preference profile so the My Profile screen can update in real-time if the user is looking at it.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase3" data-sprint="sprint-8"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Profile transparency endpoints: user-readable preference summary</div><div class="task-desc">Create GET /user/profile/detailed that returns a rich preference summary: for each preference field, include: current_value, source ("onboarding" or "learned"), onboarding_value (original), learned_value (if different), ride_count (how many rides informed the learning), and last_updated. This powers the My Profile transparency screen. Include a total inferred ride count and confirmed ride count for the user's information.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> User receives post-ride nudge, taps Yes, confirmed ride reflected in profile. My Profile shows current preference state accurately.</div>
+    </div>
+  </div>
+
+  <div class="phase-success"><h4>Phase 3 Gate</h4><p>The app learns passively. GPS inference detects rides, the nudge confirms them, and the preference profile evolves. User has full visibility and control.</p></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PHASE 4 — MONETIZATION & LAUNCH -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <span class="section-label">Phase 4 — Sprints 9–10</span>
+  <h2>Monetization & Pre-Launch</h2>
+  <div class="section-intro">Freemium model implemented. App store ready. Beta tested by real cyclists.</div>
+
+  <!-- SPRINT 9 -->
+  <div class="sprint-block collapsed" id="sprint-9">
+    <div class="sprint-header" onclick="toggleSprint('sprint-9')">
+      <span class="sprint-tag st-p4">Sprint 9</span>
+      <span class="sprint-title">Freemium Implementation</span>
+      <span class="sprint-meta">RevenueCat · Paywall · Feature flags</span>
+      <span class="sprint-progress-pill" id="pill-sprint-9">0/9</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Free and premium tiers enforced. Payment processing integrated. $2.99/mo or $19.99/yr.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Implement RevenueCat for IAP management (iOS + Android)</div><div class="task-desc">Integrate the RevenueCat SDK for unified in-app purchase management across both platforms. Create a RevenueCat project and configure the App Store Connect and Google Play Console products. RevenueCat handles receipt validation, subscription status tracking, and cross-platform entitlements. This saves weeks of work vs building purchase management from scratch. Follow RevenueCat's Expo integration guide exactly — deviating causes subtle bugs.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Monthly ($2.99) and annual ($19.99) subscription products</div><div class="task-desc">Create subscription products in App Store Connect and Google Play Console. Monthly: $2.99/month. Annual: $19.99/year (~44% savings vs monthly). Configure free trial: 7-day free trial on the annual plan only (incentivizes the higher-value subscription). Link products to RevenueCat entitlements. Test the full purchase flow in sandbox/testing environments on both platforms before going live. Apple requires these products to be approved before your app can use them.</div><div class="task-meta"><span class="task-chip tc-store">Store</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Paywall screen: free vs premium feature comparison</div><div class="task-desc">Build a clean paywall screen that clearly shows what free users get and what premium unlocks. Use a side-by-side comparison format. Free tier: weather dashboard, cycling feels-like, dawn/dusk overlay, wind context, 1 saved location. Premium: AI recommendation card, morning notifications, AI chat, behavioral learning, 5 locations, 7-day hourly. Include both price options with the annual savings highlighted. No dark patterns — the comparison should be honest and the close/dismiss button should be obvious.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Upgrade prompts at natural friction points</div><div class="task-desc">Show upgrade prompts when free users tap premium features: tapping the AI recommendation card (shows a preview + "Unlock with Premium"), trying to open the chat interface, hitting the 1-location limit, or dismissing a push notification they can't receive. Each prompt should show the paywall. Don't interrupt the core weather experience — free users should always be able to check wind, temp, and feels-like without being nagged. Limit prompts to max 1 per session.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Premium badge + account status in profile</div><div class="task-desc">Show subscription status on the profile/settings screen: "Free" or "Premium" with a small VV Blue badge. For premium users, show: subscription type (monthly/annual), next renewal date, and a "Manage subscription" link that deep-links to the App Store/Play Store subscription management page. For free users, show a subtle "Upgrade to Premium" link. Don't make free users feel like second-class citizens — "Free" is a valid tier, not a limitation.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Restore purchases flow</div><div class="task-desc">Implement "Restore Purchases" button on the paywall screen and in settings. This is required by Apple — if a user reinstalls the app or switches devices, they must be able to restore their existing subscription without paying again. RevenueCat handles the heavy lifting; you just need to call restorePurchases() and handle the result. Show a loading indicator during restore and a success/failure message after. Test this on both platforms.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Python API</div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">RevenueCat webhook integration for subscription status</div><div class="task-desc">Set up RevenueCat webhooks to notify your API when subscription status changes: initial purchase, renewal, cancellation, billing issue, expiration. On each webhook, update the user's subscription_status field in the database. Webhook endpoint should validate the RevenueCat signature to prevent spoofing. Log all webhook events for debugging. Handle the "billing retry" state — the user's subscription is technically active during Apple/Google's grace period.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Subscription status stored on user record</div><div class="task-desc">Add subscription fields to the user record: subscription_status (free/premium/trial/grace_period), subscription_product (monthly/annual), subscription_expires_at, subscription_started_at. The /user/profile endpoint should include these fields so the mobile app always knows the current status. Cache the status check — don't query RevenueCat on every API call. Webhook updates keep the database current.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-9"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Feature flag middleware: 403 + upgrade prompt for free users on premium endpoints</div><div class="task-desc">Create a FastAPI dependency that checks subscription status before allowing access to premium endpoints: /recommendations, /chat, /inference. Free users hitting these endpoints get a 403 response with a structured body: { "error": "premium_required", "feature": "ai_recommendations", "message": "Upgrade to Premium for AI ride recommendations" }. The mobile app uses this response to show the appropriate upgrade prompt. Keep the middleware simple and fast — it runs on every premium API call.</div><div class="task-meta"><span class="task-chip tc-api">API</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> Free user sees upgrade prompt on premium features. Subscriber has full access. Status survives reinstall.</div>
+      <div class="senior-flag"><strong>Senior Dev Flag:</strong> Apple IAP review is strict and rejection common. Review guidelines carefully before submission.</div>
+    </div>
+  </div>
+
+  <!-- SPRINT 10 -->
+  <div class="sprint-block collapsed" id="sprint-10">
+    <div class="sprint-header" onclick="toggleSprint('sprint-10')">
+      <span class="sprint-tag st-p4">Sprint 10</span>
+      <span class="sprint-title">Polish, Beta & App Store Prep</span>
+      <span class="sprint-meta">QA · TestFlight · Submission</span>
+      <span class="sprint-progress-pill" id="pill-sprint-10">0/13</span>
+      <span class="sprint-chevron">▾</span>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-goal"><strong>Goal:</strong> Production-ready build. Beta tested by real cyclists. App store listings submitted.</div>
+
+      <div class="task-group">
+        <div class="task-group-label">React Native / Expo</div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">End-to-end QA pass across iOS and Android</div><div class="task-desc">Walk through every user flow on both platforms: splash → login → onboarding → dashboard → pull-to-refresh → recommendation card → chat → notification tap → profile → settings → paywall → purchase → restore. Test on at least 2 iOS devices (different screen sizes) and 2 Android devices (different manufacturers). Document any bugs with screenshots. Fix all critical and high-priority bugs before beta. Medium/low bugs can ship if they're cosmetic.</div><div class="task-meta"><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Performance profiling — dashboard load time, chat latency</div><div class="task-desc">Measure cold start to dashboard render time — target under 3 seconds. Measure weather data fetch time — target under 2 seconds. Measure recommendation card load — target under 1 second (after weather data is cached). Measure chat first-token latency — target under 1.5 seconds. Profile memory usage on older devices. Identify and fix any performance bottlenecks — common culprits: oversized images, unnecessary re-renders, unoptimized list components.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Offline graceful degradation (cached forecast + staleness indicator)</div><div class="task-desc">When the device is offline, the app should display the last cached forecast with a prominent staleness indicator: "Last updated 2 hours ago · No connection." The recommendation card should show the last recommendation with a note: "Based on forecast from [time]." Chat should show a message: "Chat requires an internet connection." Never show a blank screen or a generic error — always show whatever data you have with transparency about its freshness.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Accessibility pass (Dynamic Type, VoiceOver/TalkBack)</div><div class="task-desc">Test with Dynamic Type (iOS) and font scaling (Android) at the largest setting — ensure layouts don't break. Test the core flow with VoiceOver (iOS) and TalkBack (Android) — all interactive elements should be labeled, the reading order should be logical, and the recommendation card should be fully accessible. Fix critical accessibility issues. This is both the right thing to do and increasingly a factor in App Store reviews.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Onboarding flow final polish using Figma designs</div><div class="task-desc">Revisit the onboarding flow with fresh eyes. Compare every screen pixel-for-pixel against the Figma designs. Fix any spacing, typography, or color inconsistencies. Ensure transitions between steps are smooth. Test the flow with someone who hasn't seen the app before — watch where they hesitate or get confused. The onboarding flow is the first impression and determines whether a user completes setup or abandons the app.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">App icon, splash screen, all brand assets integrated</div><div class="task-desc">Integrate the VeloVane logo as the app icon across all required sizes (iOS: 1024x1024 for App Store, plus all device sizes; Android: adaptive icon with foreground/background layers). Splash screen should match the Figma load screen: background image with centered VeloVane logo. Ensure the splash screen displays correctly during the app's JavaScript bundle load time. Brand colors and fonts should be consistent throughout — no default React Native styling remaining anywhere.</div><div class="task-meta"><span class="task-chip tc-mobile">Mobile</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Sentry error tracking integration</div><div class="task-desc">Integrate Sentry for crash reporting and error tracking. Configure source maps so stack traces show your actual code (not minified bundles). Set up alerts for: crash rate above 1%, new unhandled exceptions, and API error spikes. Add breadcrumbs for key user actions (dashboard load, chat message sent, notification tapped) so crash reports have context. This is critical for post-launch — you need to know when things break before users tell you.</div><div class="task-meta"><span class="task-chip tc-infra">Infra</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Analytics integration (PostHog or Mixpanel)</div><div class="task-desc">Integrate product analytics to track the success metrics from the PRD. Key events to track: onboarding_completed (with preference values), dashboard_loaded, recommendation_viewed, recommendation_card_tapped, chat_message_sent, notification_received, notification_tapped, upgrade_prompt_shown, purchase_completed. Track daily active users, onboarding completion rate, and notification open rate. These metrics determine whether the product is working after launch.</div><div class="task-meta"><span class="task-chip tc-infra">Infra</span></div></div></div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">App Store</div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Apple App Store listing: screenshots, description, keywords, privacy policy</div><div class="task-desc">Create the App Store listing. Screenshots: 6.7" (iPhone 15 Pro Max) and 6.1" (iPhone 15 Pro) are required; iPad optional. Show the dashboard with real data as the hero screenshot. Write a description leading with the value prop: "VeloVane tells you when to ride." Keywords: cycling, weather, wind, bike, riding, forecast, cycling weather. Privacy policy: link to your hosted privacy policy page. Category: Weather. Content rating: 4+ (no restricted content).</div><div class="task-meta"><span class="task-chip tc-store">Store</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Google Play Store listing: equivalent assets</div><div class="task-desc">Create the Play Store listing with equivalent assets. Google requires: feature graphic (1024x500), screenshots (phone + optional tablet), short description (80 chars), full description (4000 chars). Reuse the App Store description with minor format adjustments. Google's review process is typically faster than Apple's (hours vs days). Submit to both stores simultaneously so they launch close together.</div><div class="task-meta"><span class="task-chip tc-store">Store</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Privacy policy page (GPS data + AI personalization)</div><div class="task-desc">Create and host a privacy policy at a public URL (e.g., velovane.com/privacy). Required disclosures: what data you collect (location, ride inference, preferences, chat messages), how you use it (personalization, recommendations), whether you share it (you don't — state this clearly), how long you retain it (30-day deletion after account deletion), and how users can request data deletion. Both Apple and Google require a privacy policy link. This is a legal document — consider using a template from a reputable source and customizing it.</div><div class="task-meta"><span class="task-chip tc-store">Store</span><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">TestFlight beta: minimum 10 real cyclists, 2-week feedback cycle</div><div class="task-desc">Upload to TestFlight (iOS) and create a Google Play internal testing track. Recruit minimum 10 beta testers who are actual cyclists (not friends who don't ride). Provide a structured feedback form: What did you check first? Did the recommendation match your judgment? Would you pay $2.99/mo? What's missing? Run the beta for 2 full weeks — this captures weekday and weekend riding patterns. Check Sentry daily for crashes during beta. This real-world testing is more valuable than all internal QA combined.</div><div class="task-meta"><span class="task-chip tc-critical">Critical</span></div></div></div>
+
+        <div class="task-item" data-phase="phase4" data-sprint="sprint-10"><div class="task-check" onclick="toggleTask(this)"></div><div class="task-content"><div class="task-title">Address critical beta feedback before submission</div><div class="task-desc">After the 2-week beta, triage all feedback: Critical (blocks launch — fix immediately), High (degrades experience — fix before submission), Medium (nice to have — backlog for v1.1), Low (cosmetic — backlog). Common beta findings: recommendation accuracy issues ("it said go but it was too windy"), notification timing problems, UI confusion on specific screens. Fix all Critical and High items. Submit to both app stores only when no Critical bugs remain.</div><div class="task-meta"><span class="task-chip tc-critical">Critical</span></div></div></div>
+      </div>
+
+      <div class="sprint-done"><strong>Done when:</strong> App submitted to both stores. Beta feedback incorporated. No critical bugs outstanding.</div>
+    </div>
+  </div>
+
+  <div class="phase-success"><h4>Launch Gate</h4><p>App is live in both stores. Freemium model working. Real cyclists have tested it. "Should I ride today?" is answered in under 5 seconds.</p></div>
+</div>
+
+<div class="footer">
+  <p>velovane — Sprint Plan v2 · 10 sprints · 4 phases</p>
+  <p>March 2026 · Risk-first methodology · Quality-gated launch</p>
+</div>
+
+</div>
+
+<script>
+  function toggleSprint(id) { document.getElementById(id).classList.toggle('collapsed'); }
+  function toggleTask(el) { el.closest('.task-item').classList.toggle('done'); saveState(); updateProgress(); }
+
+  function updateProgress() {
+    const phases = ['phase1','phase2','phase3','phase4'];
+    let oD=0, oT=0;
+    phases.forEach(p => {
+      const t = document.querySelectorAll(`.task-item[data-phase="${p}"]`).length;
+      const d = document.querySelectorAll(`.task-item[data-phase="${p}"].done`).length;
+      oD+=d; oT+=t;
+      const pct = t>0 ? Math.round(d/t*100) : 0;
+      const bar = document.getElementById(`prog-${p}`);
+      const txt = document.getElementById(`prog-${p}-text`);
+      if(bar) bar.style.width = pct+'%';
+      if(txt) txt.textContent = `${d}/${t}`;
+    });
+    document.getElementById('prog-overall').style.width = (oT>0?Math.round(oD/oT*100):0)+'%';
+    document.getElementById('prog-overall-text').textContent = `${oD}/${oT}`;
+
+    for(let i=1;i<=10;i++){
+      const b=document.getElementById(`sprint-${i}`);
+      if(!b)continue;
+      const t=b.querySelectorAll('.task-item').length;
+      const d=b.querySelectorAll('.task-item.done').length;
+      const p=document.getElementById(`pill-sprint-${i}`);
+      if(p){
+        p.textContent=`${d}/${t}`;
+        if(d===t&&t>0){p.style.background='var(--go-light)';p.style.color='var(--go)';}
+        else if(d>0){p.style.background='var(--caution-light)';p.style.color='var(--caution)';}
+        else{p.style.background='var(--surface-light)';p.style.color='var(--text-tertiary)';}
+      }
+    }
+  }
+
+  function saveState(){
+    const s={};
+    document.querySelectorAll('.task-item[data-phase]').forEach((el,i)=>{s[i]=el.classList.contains('done');});
+    try{localStorage.setItem('vv-sprint-state-v2',JSON.stringify(s));}catch(e){}
+  }
+
+  function loadState(){
+    try{
+      const s=localStorage.getItem('vv-sprint-state-v2');
+      if(!s)return;
+      const d=JSON.parse(s);
+      document.querySelectorAll('.task-item[data-phase]').forEach((el,i)=>{if(d[i])el.classList.add('done');});
+    }catch(e){}
+  }
+
+  loadState();
+  updateProgress();
+</script>
+</body>
+</html>
